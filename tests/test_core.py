@@ -90,3 +90,18 @@ def test_load_reference_database_and_align_read():
     assert catalog["BRCA1"]["gene_name"] == "BRCA1"
     assert alignment["score"] > 0
     assert alignment["identity"] >= 0.95
+
+
+def test_parse_fasta_and_call_variants_from_alignment():
+    from ngs_variant_assembly_annotation_tool.core import (
+        call_variants_from_alignment,
+        parse_fasta,
+    )
+
+    fasta = ">chr1\nATGCGTACGA\n"
+    records = parse_fasta(fasta)
+    variants = call_variants_from_alignment("ATGCGTACGA", ["ATGCGTACGA", "ATGCGTACCA"]) 
+
+    assert records["chr1"].startswith("ATGCGT")
+    assert len(variants) >= 1
+    assert variants[0]["ref"] in {"A", "C", "G", "T"}

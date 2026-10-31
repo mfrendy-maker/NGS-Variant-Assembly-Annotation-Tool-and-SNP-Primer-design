@@ -69,6 +69,29 @@ REFERENCE_GENE_DB = {
 }
 
 
+def parse_fasta(fasta_text: str) -> Dict[str, str]:
+    records: Dict[str, str] = {}
+    current_header = ""
+    sequence_parts: List[str] = []
+
+    for raw_line in fasta_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith(">"):
+            if current_header:
+                records[current_header] = "".join(sequence_parts).upper()
+            current_header = line[1:].strip()
+            sequence_parts = []
+        elif current_header:
+            sequence_parts.append(line.upper())
+
+    if current_header:
+        records[current_header] = "".join(sequence_parts).upper()
+
+    return records
+
+
 def _parse_fastq_records(fastq_text: str) -> List[Dict[str, str]]:
     lines = [line.strip() for line in fastq_text.splitlines() if line.strip()]
     records: List[Dict[str, str]] = []
@@ -349,6 +372,34 @@ def map_reads_to_reference(reference: str, reads: List[str]) -> Dict[str, Any]:
         "status": "mapped" if mapped_reads else "not_mapped",
         "alignments": alignments,
     }
+
+
+def call_variants_from_alignment(reference: str, reads: List[str], chrom: str = "chr1") -> List[Dict[str, Any]]:
+    if not reference:
+        return []
+
+    variants: List[Dict[str, Any]] = []
+    for read_index, read in enumerate(reads):
+        if not read:
+            continue
+
+        if len(read) != len(reference):
+            continue
+
+        for position, (ref_base, read_base) in enumerate(zip(reference, read), start=1):
+            if ref_base != read_base:
+                variants.append(
+                    {
+                        "chrom": chrom,
+                        "pos": position,
+                        "ref": ref_base,
+                        "alt": read_base,
+                        "type": "SNP",
+                        "read_index": read_index,
+                    }
+                )
+
+    return variants
 
 
 def _translate_codon(codon: str) -> str:
