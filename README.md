@@ -6,28 +6,40 @@ End-to-end NGS workflow for FASTQ processing, read assembly, reference genome al
 
 This project is designed for next-generation sequencing (NGS) analysis workflows, from raw FASTQ data to biological interpretation and experimental validation. It integrates:
 
-- read quality control
-- genome assembly
-- alignment to reference genomes
-- variant calling to produce VCF files
-- functional annotation of mutations
-- reference genome database integration
-- mutant identification and prioritization
-- primer design for detected variants
+- FASTQ quality control and summary statistics
+- simple read assembly and contig reconstruction
+- alignment and mapping to a reference genome
+- variant calling and VCF parsing
+- reference genome database lookups for gene context
+- annotation of mutation effects
+- mutant prioritization for downstream studies
+- primer design for mutation validation and PCR screening
 
 ## Features
 
 - FASTQ quality summary for read length, count, and base composition
-- reference-guided assembly summaries
+- basic contig assembly from overlapping reads
+- mapping summary against a reference sequence
 - VCF parsing and variant extraction
-- mutation classification into SNP or indel categories
-- primer design suggestions for target variants
+- mutation annotation and effect prediction
+- local reference gene lookup for BRCA1, TP53, and EGFR
+- primer design suggestions for SNP and indel targets
 - lightweight CLI interface for common tasks
 - browser-based dashboard for exploration
 
-## Project status
+## Example workflow
 
-This is an early-stage NGS toolkit scaffold intended for extension into a practical mutation-discovery workflow.
+1. Input FASTQ files
+2. Run quality checks
+3. Assemble overlapping reads into contigs
+4. Map reads against a reference genome
+5. Call variants and produce VCF files
+6. Annotate mutation effects against reference context
+7. Design primers for mutation validation
+
+## Scope
+
+This project is intended for gene-scale and small-to-medium NGS analyses, with a focus on practical mutation discovery, reference-based interpretation, and downstream validation workflows.
 
 ## Installation
 
@@ -42,7 +54,7 @@ python -m pip install -e .
 ```bash
 ngs-variant-tool qc sample.fastq
 ngs-variant-tool vcf-summary variants.vcf
-ngs-variant-tool design-primer A T G C 20
+ngs-variant-tool design-primer A T 24
 ```
 
 ### Streamlit dashboard
@@ -50,19 +62,6 @@ ngs-variant-tool design-primer A T G C 20
 ```bash
 streamlit run app.py
 ```
-
-## Example workflow
-
-1. Input FASTQ files
-2. Run quality checks
-3. Map reads to a reference genome
-4. Call variants and produce VCF files
-5. Annotate and filter mutations
-6. Design primers for candidate mutant sites
-
-## Scope
-
-This project is intended for gene-scale and small-to-medium NGS analyses, with a focus on practical mutation discovery and downstream validation workflows.
 
 ## License
 
