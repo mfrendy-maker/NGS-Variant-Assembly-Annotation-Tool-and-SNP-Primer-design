@@ -35,3 +35,42 @@ def test_design_primers_for_variants():
     assert "forward_primer" in primers[0]
     assert "reverse_primer" in primers[0]
     assert primers[0]["variant_type"] in {"SNP", "INDEL"}
+
+
+def test_assemble_contigs_simple_overlap():
+    from ngs_variant_assembly_annotation_tool.core import assemble_contigs
+
+    contigs = assemble_contigs(["ATGCG", "GCGTA", "GTAGC"])
+
+    assert len(contigs) == 1
+    assert contigs[0].startswith("ATGCG")
+    assert len(contigs[0]) >= 10
+
+
+def test_map_reads_to_reference_and_annotate_variant():
+    from ngs_variant_assembly_annotation_tool.core import (
+        map_reads_to_reference,
+        annotate_variant,
+    )
+
+    reference = "ATGGCCAAATTTGGG"
+    reads = ["ATGGCCAAATTTGGG", "ATGGCCAAATTTGGG"]
+    mapping = map_reads_to_reference(reference, reads)
+    annotation = annotate_variant(reference, "A", "G", 5)
+
+    assert mapping["mapped_reads"] == 2
+    assert mapping["coverage"] > 0
+    assert annotation["effect"] in {"missense", "synonymous", "nonsynonymous", "in-frame"}
+
+
+def test_lookup_reference_gene_and_snp_primer_length():
+    from ngs_variant_assembly_annotation_tool.core import lookup_reference_gene, design_primers_for_variants
+
+    gene = lookup_reference_gene("BRCA1")
+    primers = design_primers_for_variants([
+        {"chrom": "chr17", "pos": 430, "ref": "C", "alt": "T", "type": "SNP"}
+    ], target_length=24)
+
+    assert gene["gene_name"] == "BRCA1"
+    assert len(primers[0]["forward_primer"]) == 24
+    assert len(primers[0]["reverse_primer"]) == 24
