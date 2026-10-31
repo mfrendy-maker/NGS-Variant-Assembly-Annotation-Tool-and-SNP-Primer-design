@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from collections import Counter
+from pathlib import Path
 from typing import Any, Dict, List
 
 
@@ -30,6 +32,7 @@ REFERENCE_GENE_DB = {
         "reference_accession": "NM_007294",
         "description": "Breast cancer susceptibility gene 1",
         "length": 1863,
+        "sequence": "ATGCGTACGATCGATCGTAGCTAGCTAGCGATCGATCGATCGATCGATCG",
     },
     "TP53": {
         "gene_name": "TP53",
@@ -37,6 +40,7 @@ REFERENCE_GENE_DB = {
         "reference_accession": "NM_000546",
         "description": "Tumor protein p53",
         "length": 1182,
+        "sequence": "ATGGAGGAGCCGCAGTCAGATCCTAGCGTCGAGCCCCCTCTGAGTCAGGAA",
     },
     "EGFR": {
         "gene_name": "EGFR",
@@ -44,6 +48,23 @@ REFERENCE_GENE_DB = {
         "reference_accession": "NM_005228",
         "description": "Epidermal growth factor receptor",
         "length": 1890,
+        "sequence": "ATGCGACCCTCCGGGACGAGTTTGTGCGTGGAGACCGGCGGGCAGCGGGAG",
+    },
+    "BRAF": {
+        "gene_name": "BRAF",
+        "chromosome": "chr7",
+        "reference_accession": "NM_004333",
+        "description": "B-Raf proto-oncogene serine/threonine kinase",
+        "length": 1890,
+        "sequence": "ATGAGCACGCAAGGGGACCTGCTGAAATCTGCTAAAGTGATGAAATCCATC",
+    },
+    "PTEN": {
+        "gene_name": "PTEN",
+        "chromosome": "chr10",
+        "reference_accession": "NM_000314",
+        "description": "Phosphatase and tensin homolog",
+        "length": 1200,
+        "sequence": "ATGACAGCCATCATCAAAGAGATCGTTAGCAGAAACAAAAGGAGATATCAAG",
     },
 }
 
@@ -180,13 +201,144 @@ def assemble_contigs(sequences: List[str]) -> List[str]:
     return assembled
 
 
+def load_reference_database(database: Any) -> Dict[str, Dict[str, Any]]:
+    if isinstance(database, str):
+        path = Path(database)
+        if not path.exists():
+            raise FileNotFoundError(f"Reference database not found: {database}")
+
+        if path.suffix.lower() == ".json":
+            with path.open("r", encoding="utf-8") as handle:
+                database = json.load(handle)
+        else:
+            entries: Dict[str, Dict[str, Any]] = {}
+            with path.open("r", encoding="utf-8") as handle:
+                for line in handle:
+                    row = [value.strip() for value in line.rstrip("\n").split("\t")]
+                    if len(row) < 3 or not row[0] or row[0].startswith("#"):
+                        continue
+                    gene_name = row[0].upper()
+                    entries[gene_name] = {
+                        "gene_name": gene_name,
+                        "chromosome": row[1],
+                        "reference_accession": row[2],
+                        "description": row[3] if len(row) > 3 else "",
+                        "length": int(row[4]) if len(row) > 4 and row[4].isdigit() else 0,
+                    }
+            database = entries
+
+    if not isinstance(database, dict):
+        raise TypeError("Reference database must be a dictionary or a path to a JSON/TSV file.")
+
+    normalized: Dict[str, Dict[str, Any]] = {}
+    for gene_key, record in database.items():
+        gene_name = str(record.get("gene_name", gene_key)).upper()
+        normalized[gene_name] = {
+            "gene_name": gene_name,
+            "chromosome": record.get("chromosome", "unknown"),
+            "reference_accession": record.get("reference_accession", "N/A"),
+            "description": record.get("description", ""),
+            "length": int(record.get("length") or len(str(record.get("sequence", "")))),
+            "sequence": str(record.get("sequence", "")).upper(),
+        }
+
+    return normalized
+
+
+def align_sequence_to_reference(read: str, reference: str) -> Dict[str, Any]:
+    query = (read or "").upper()
+    target = (reference or "").upper()
+
+    if not query or not target:
+        return {
+            "score": 0,
+            "matches": 0,
+            "mismatches": 0,
+            "gaps": 0,
+            "identity": 0.0,
+            "aligned_read": "",
+            "aligned_reference": "",
+            "status": "empty",
+        }
+
+    m = len(query)
+    n = len(target)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    best_score = 0
+    best_i = 0
+    best_j = 0
+
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if query[i - 1] == target[j - 1]:
+                score = dp[i - 1][j - 1] + 2
+            else:
+                score = max(dp[i - 1][j - 1] - 1, dp[i - 1][j] - 2, dp[i][j - 1] - 2, 0)
+
+            dp[i][j] = score
+            if score > best_score:
+                best_score = score
+                best_i = i
+                best_j = j
+
+    aligned_read: List[str] = []
+    aligned_reference: List[str] = []
+    matches = 0
+    mismatches = 0
+    gaps = 0
+    i = best_i
+    j = best_j
+
+    while i > 0 and j > 0 and dp[i][j] > 0:
+        if query[i - 1] == target[j - 1]:
+            aligned_read.append(query[i - 1])
+            aligned_reference.append(target[j - 1])
+            matches += 1
+            i -= 1
+            j -= 1
+        elif dp[i][j] == dp[i - 1][j - 1] - 1:
+            aligned_read.append(query[i - 1])
+            aligned_reference.append(target[j - 1])
+            mismatches += 1
+            i -= 1
+            j -= 1
+        elif dp[i][j] == dp[i - 1][j] - 2:
+            aligned_read.append(query[i - 1])
+            aligned_reference.append("-")
+            gaps += 1
+            i -= 1
+        else:
+            aligned_read.append("-")
+            aligned_reference.append(target[j - 1])
+            gaps += 1
+            j -= 1
+
+    aligned_read.reverse()
+    aligned_reference.reverse()
+    identity = (matches / max(1, max(len(query), len(target)))) * 100 if query and target else 0.0
+
+    return {
+        "score": best_score,
+        "matches": matches,
+        "mismatches": mismatches,
+        "gaps": gaps,
+        "identity": round(identity, 2),
+        "aligned_read": "".join(aligned_read),
+        "aligned_reference": "".join(aligned_reference),
+        "status": "mapped" if best_score > 0 else "no_match",
+    }
+
+
 def map_reads_to_reference(reference: str, reads: List[str]) -> Dict[str, Any]:
     if not reference:
-        return {"reference_length": 0, "mapped_reads": 0, "coverage": 0.0}
+        return {"reference_length": 0, "mapped_reads": 0, "coverage": 0.0, "status": "not_mapped"}
 
     mapped_reads = 0
+    alignments: List[Dict[str, Any]] = []
     for read in reads:
-        if read in reference or reference in read:
+        alignment = align_sequence_to_reference(read, reference)
+        alignments.append(alignment)
+        if alignment["score"] > 0:
             mapped_reads += 1
 
     coverage = (mapped_reads / len(reads)) * 100 if reads else 0.0
@@ -195,6 +347,7 @@ def map_reads_to_reference(reference: str, reads: List[str]) -> Dict[str, Any]:
         "mapped_reads": mapped_reads,
         "coverage": round(coverage, 2),
         "status": "mapped" if mapped_reads else "not_mapped",
+        "alignments": alignments,
     }
 
 
@@ -252,6 +405,7 @@ def lookup_reference_gene(gene_name: str) -> Dict[str, Any]:
         "reference_accession": "N/A",
         "description": "Reference gene not in local database.",
         "length": 0,
+        "sequence": "",
     })
     return dict(record)
 

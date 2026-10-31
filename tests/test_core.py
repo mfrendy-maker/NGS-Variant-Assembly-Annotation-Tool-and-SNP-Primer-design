@@ -74,3 +74,19 @@ def test_lookup_reference_gene_and_snp_primer_length():
     assert gene["gene_name"] == "BRCA1"
     assert len(primers[0]["forward_primer"]) == 24
     assert len(primers[0]["reverse_primer"]) == 24
+
+
+def test_load_reference_database_and_align_read():
+    from ngs_variant_assembly_annotation_tool.core import (
+        align_sequence_to_reference,
+        load_reference_database,
+    )
+
+    catalog = load_reference_database({
+        "BRCA1": {"gene_name": "BRCA1", "chromosome": "chr17", "sequence": "ATGCGTACGA"}
+    })
+    alignment = align_sequence_to_reference("ATGCGTACGA", "ATGCGTACGA")
+
+    assert catalog["BRCA1"]["gene_name"] == "BRCA1"
+    assert alignment["score"] > 0
+    assert alignment["identity"] >= 0.95
