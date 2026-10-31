@@ -499,3 +499,35 @@ def summarize_reference_alignment(reference_name: str, alignment_score: float, m
         "mapped_reads": mapped_reads,
         "status": "mapped" if mapped_reads > 0 else "not_mapped",
     }
+
+
+def summarize_variant_samples(sample_variants: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
+    if not sample_variants:
+        return {"sample_count": 0, "total_variants": 0, "shared_variants": [], "variant_types": {}, "per_sample": {}}
+
+    per_sample: Dict[str, int] = {}
+    positions: Dict[str, int] = {}
+    variant_types: Counter[str] = Counter()
+
+    for sample_name, variants in sample_variants.items():
+        per_sample[sample_name] = len(variants)
+        for variant in variants:
+            variant_type = str(variant.get("type", "UNKNOWN")).upper()
+            variant_types[variant_type] += 1
+
+            chrom = str(variant.get("chrom", "chr1"))
+            pos = int(variant.get("pos", 0))
+            key = f"{chrom}:{pos}"
+            positions[key] = positions.get(key, 0) + 1
+
+    shared_variants = sorted(
+        key for key, count in positions.items() if count >= len(sample_variants)
+    )
+
+    return {
+        "sample_count": len(sample_variants),
+        "total_variants": sum(per_sample.values()),
+        "shared_variants": shared_variants,
+        "variant_types": dict(sorted(variant_types.items())),
+        "per_sample": per_sample,
+    }
