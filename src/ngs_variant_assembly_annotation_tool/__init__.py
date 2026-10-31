@@ -13,6 +13,7 @@ from .core import (
     parse_fasta,
     parse_vcf,
     summarize_reference_alignment,
+    summarize_variant_samples,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "lookup_reference_gene",
     "design_primers_for_variants",
     "summarize_reference_alignment",
+    "summarize_variant_samples",
 ]

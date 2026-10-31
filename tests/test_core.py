@@ -105,3 +105,24 @@ def test_parse_fasta_and_call_variants_from_alignment():
     assert records["chr1"].startswith("ATGCGT")
     assert len(variants) >= 1
     assert variants[0]["ref"] in {"A", "C", "G", "T"}
+
+
+def test_summarize_variant_samples():
+    from ngs_variant_assembly_annotation_tool.core import summarize_variant_samples
+
+    sample_variants = {
+        "sample_1": [
+            {"chrom": "chr1", "pos": 10, "ref": "A", "alt": "G", "type": "SNP"},
+            {"chrom": "chr1", "pos": 20, "ref": "C", "alt": "T", "type": "SNP"},
+        ],
+        "sample_2": [
+            {"chrom": "chr1", "pos": 10, "ref": "A", "alt": "G", "type": "SNP"},
+        ],
+    }
+
+    summary = summarize_variant_samples(sample_variants)
+
+    assert summary["sample_count"] == 2
+    assert summary["total_variants"] == 3
+    assert "chr1:10" in summary["shared_variants"]
+    assert summary["variant_types"]["SNP"] == 3
