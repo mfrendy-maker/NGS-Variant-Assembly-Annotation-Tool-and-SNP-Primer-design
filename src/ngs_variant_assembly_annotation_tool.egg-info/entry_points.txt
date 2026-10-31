@@ -1,2 +1,0 @@
-[console_scripts]
-ngs-variant-tool = ngs_variant_assembly_annotation_tool.cli:main
