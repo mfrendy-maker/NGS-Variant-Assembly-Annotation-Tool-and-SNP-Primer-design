@@ -74,6 +74,21 @@ This project is intended for gene-scale and small-to-medium NGS analysis workflo
 
 End-to-end NGS workflow for FASTQ processing, read assembly, reference genome alignment, variant calling, functional annotation, mutant identification, and primer design for detected mutations.
 
+## Quick start
+
+This repository includes example data under the examples folder so you can run the tool immediately.
+
+```bash
+python -m pip install -e .
+ngs-variant-tool qc examples/sample.fastq
+ngs-variant-tool vcf-summary examples/variants.vcf
+ngs-variant-tool design-primer A G 24
+streamlit run app.py
+```
+
+- Example FASTQ file: `examples/sample.fastq`
+- Example VCF file: `examples/variants.vcf`
+
 ## Overview
 
 This project is designed for next-generation sequencing (NGS) analysis workflows, from raw FASTQ data to biological interpretation and experimental validation. It integrates:
