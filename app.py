@@ -4,11 +4,13 @@ from ngs_variant_assembly_annotation_tool.core import (
     align_sequence_to_reference,
     annotate_variant,
     assemble_contigs,
+    call_variants_from_alignment,
     compute_fastq_quality_summary,
     design_primers_for_variants,
     load_reference_database,
     lookup_reference_gene,
     map_reads_to_reference,
+    parse_fasta,
     parse_vcf,
 )
 
@@ -31,6 +33,16 @@ vcf_text = st.sidebar.text_area(
     height=180,
 )
 
+uploaded_fasta = st.sidebar.file_uploader("Load reference FASTA", type=["fasta", "fa", "txt"])
+uploaded_vcf = st.sidebar.file_uploader("Load VCF file", type=["vcf", "txt"])
+
+if uploaded_fasta is not None:
+    fasta_records = parse_fasta(uploaded_fasta.read().decode("utf-8"))
+    if fasta_records:
+        reference_sequence = next(iter(fasta_records.values()))
+if uploaded_vcf is not None:
+    vcf_text = uploaded_vcf.read().decode("utf-8")
+
 if st.button("Run analysis"):
     qc_summary = compute_fastq_quality_summary(raw_reads)
     st.subheader("FASTQ quality summary")
@@ -49,6 +61,11 @@ if st.button("Run analysis"):
     mapping = map_reads_to_reference(reference_sequence, read_sequences)
     st.subheader("Reference mapping")
     st.json(mapping)
+
+    if read_sequences:
+        variant_candidates = call_variants_from_alignment(reference_sequence, read_sequences)
+        st.subheader("Alignment-derived variants")
+        st.json(variant_candidates[:10])
 
     variants = parse_vcf(vcf_text)
     st.subheader("VCF variants")
