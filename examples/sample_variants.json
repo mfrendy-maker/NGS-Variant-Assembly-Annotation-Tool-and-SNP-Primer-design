@@ -1,0 +1,10 @@
+{
+  "sample_1": [
+    {"chrom": "chr1", "pos": 10, "ref": "A", "alt": "G", "type": "SNP"},
+    {"chrom": "chr1", "pos": 20, "ref": "C", "alt": "T", "type": "SNP"}
+  ],
+  "sample_2": [
+    {"chrom": "chr1", "pos": 10, "ref": "A", "alt": "G", "type": "SNP"},
+    {"chrom": "chr1", "pos": 40, "ref": "G", "alt": "A", "type": "SNP"}
+  ]
+}

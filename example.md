@@ -1,0 +1,43 @@
+# Example Dataset and MTB Workflow
+
+This file documents example datasets and a realistic MTB workflow for the project.
+
+## Included demo data
+
+The repository includes a compact synthetic MTB-style FASTQ file for quick local testing:
+
+- `examples/mtb_demo.fastq`
+
+This is intentionally small and suitable for demonstrations, tutorials, and local validation.
+
+## Real MTB dataset example from NCBI SRA
+
+A verified public example is the MTB whole-genome sequencing run associated with experiment `SRX35932984` and run `SRR41455284`.
+
+```bash
+# Download the run from NCBI SRA
+prefetch SRR41455284
+fasterq-dump --split-files SRR41455284
+```
+
+This produces paired-end FASTQ files:
+
+```bash
+SRR41455284_1.fastq
+SRR41455284_2.fastq
+```
+
+### Example workflow
+
+```bash
+ngs-variant-tool qc SRR41455284_1.fastq
+ngs-variant-tool qc SRR41455284_2.fastq
+```
+
+These files can then be used for downstream QC, assembly, mapping, variant calling, annotation, and validation tasks supported by this toolkit.
+
+## Notes
+
+- The project also includes general example data in the `examples/` folder for FASTQ, FASTA, VCF, and variant-summary workflows.
+- The synthetic `mtb_demo.fastq` file is intended for quick local testing and demonstrations.
+- For real MTB studies, the run-level SRA accession should be used for download, not the sample or project metadata accession alone.

@@ -1,3 +1,6 @@
+import json
+import sys
+
 from ngs_variant_assembly_annotation_tool.core import (
     compute_fastq_quality_summary,
     parse_vcf,
@@ -126,3 +129,28 @@ def test_summarize_variant_samples():
     assert summary["total_variants"] == 3
     assert "chr1:10" in summary["shared_variants"]
     assert summary["variant_types"]["SNP"] == 3
+
+
+def test_cli_sample_summary(tmp_path, monkeypatch, capsys):
+    from ngs_variant_assembly_annotation_tool import cli
+
+    sample_variants = {
+        "sample_1": [
+            {"chrom": "chr1", "pos": 10, "ref": "A", "alt": "G", "type": "SNP"},
+            {"chrom": "chr1", "pos": 20, "ref": "C", "alt": "T", "type": "SNP"},
+        ],
+        "sample_2": [
+            {"chrom": "chr1", "pos": 10, "ref": "A", "alt": "G", "type": "SNP"},
+        ],
+    }
+
+    sample_file = tmp_path / "sample_variants.json"
+    sample_file.write_text(json.dumps(sample_variants), encoding="utf-8")
+
+    monkeypatch.setattr(sys, "argv", ["ngs-variant-tool", "sample-summary", str(sample_file)])
+    cli.main()
+
+    captured = capsys.readouterr().out
+    assert "sample_count" in captured
+    assert "shared_variants" in captured
+    assert "chr1:10" in captured
