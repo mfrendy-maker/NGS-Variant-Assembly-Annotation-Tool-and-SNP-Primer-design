@@ -1,6 +1,12 @@
 import argparse
 
-from .core import compute_fastq_quality_summary, design_primers_for_variants, parse_vcf
+from .core import (
+    align_sequence_to_reference,
+    compute_fastq_quality_summary,
+    design_primers_for_variants,
+    load_reference_database,
+    parse_vcf,
+)
 
 
 def main() -> None:
@@ -18,6 +24,13 @@ def main() -> None:
     primer_parser.add_argument("alt")
     primer_parser.add_argument("target_length", type=int, default=20)
 
+    align_parser = subparsers.add_parser("align", help="Align a read to a reference sequence")
+    align_parser.add_argument("read")
+    align_parser.add_argument("reference")
+
+    db_parser = subparsers.add_parser("load-db", help="Load a reference gene database")
+    db_parser.add_argument("database_path")
+
     args = parser.parse_args()
 
     if args.command == "qc":
@@ -33,6 +46,12 @@ def main() -> None:
     elif args.command == "design-primer":
         variant = {"chrom": "chr1", "pos": 100, "ref": args.ref, "alt": args.alt, "type": "SNP"}
         print(design_primers_for_variants([variant], args.target_length)[0])
+
+    elif args.command == "align":
+        print(align_sequence_to_reference(args.read, args.reference))
+
+    elif args.command == "load-db":
+        print(load_reference_database(args.database_path))
 
     else:
         parser.print_help()

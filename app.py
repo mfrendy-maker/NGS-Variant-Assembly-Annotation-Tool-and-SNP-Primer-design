@@ -1,10 +1,12 @@
 import streamlit as st
 
 from ngs_variant_assembly_annotation_tool.core import (
+    align_sequence_to_reference,
     annotate_variant,
     assemble_contigs,
     compute_fastq_quality_summary,
     design_primers_for_variants,
+    load_reference_database,
     lookup_reference_gene,
     map_reads_to_reference,
     parse_vcf,
@@ -34,15 +36,17 @@ if st.button("Run analysis"):
     st.subheader("FASTQ quality summary")
     st.json(qc_summary)
 
-    reads = [record["sequence"] for record in []]
-    if qc_summary["read_count"]:
-        reads = [record["sequence"] for record in []]
+    read_sequences = [
+        line.strip()
+        for line in raw_reads.splitlines()
+        if line.strip() and not line.startswith("@") and not line.startswith("+")
+    ]
 
     st.subheader("Assembly summary")
-    contigs = assemble_contigs([seq for seq in [line for line in raw_reads.splitlines() if line and not line.startswith("@") and not line.startswith("+") and not line.startswith("#")]])
+    contigs = assemble_contigs(read_sequences)
     st.json({"assembled_contigs": contigs})
 
-    mapping = map_reads_to_reference(reference_sequence, [seq for seq in [line for line in raw_reads.splitlines() if line and not line.startswith("@") and not line.startswith("+") and not line.startswith("#")]])
+    mapping = map_reads_to_reference(reference_sequence, read_sequences)
     st.subheader("Reference mapping")
     st.json(mapping)
 
@@ -50,7 +54,10 @@ if st.button("Run analysis"):
     st.subheader("VCF variants")
     st.dataframe(variants)
 
-    annotated = [annotate_variant(reference_sequence, variant["ref"], variant["alt"], variant["pos"], gene_name="BRCA1") for variant in variants]
+    annotated = [
+        annotate_variant(reference_sequence, variant["ref"], variant["alt"], variant["pos"], gene_name="BRCA1")
+        for variant in variants
+    ]
     st.subheader("Variant annotation")
     st.json(annotated)
 
@@ -60,3 +67,9 @@ if st.button("Run analysis"):
 
     st.subheader("Reference genome database lookup")
     st.json(lookup_reference_gene("BRCA1"))
+
+    st.subheader("Sequence alignment")
+    st.json(align_sequence_to_reference(reference_sequence, reference_sequence))
+
+    st.subheader("Database loader")
+    st.json(load_reference_database({"BRCA1": lookup_reference_gene("BRCA1")}))
