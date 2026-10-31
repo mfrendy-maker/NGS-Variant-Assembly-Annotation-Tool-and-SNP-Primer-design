@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+src/ngs_variant_assembly_annotation_tool/__init__.py
+src/ngs_variant_assembly_annotation_tool/cli.py
+src/ngs_variant_assembly_annotation_tool/core.py
+src/ngs_variant_assembly_annotation_tool.egg-info/PKG-INFO
+src/ngs_variant_assembly_annotation_tool.egg-info/SOURCES.txt
+src/ngs_variant_assembly_annotation_tool.egg-info/dependency_links.txt
+src/ngs_variant_assembly_annotation_tool.egg-info/entry_points.txt
+src/ngs_variant_assembly_annotation_tool.egg-info/requires.txt
+src/ngs_variant_assembly_annotation_tool.egg-info/top_level.txt
+tests/test_core.py
