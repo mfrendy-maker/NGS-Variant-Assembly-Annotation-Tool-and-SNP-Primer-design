@@ -49,18 +49,84 @@ python -m pip install -e .
 
 ## Quick start
 
-### CLI
+### Install the project
+
+```bash
+python -m pip install -e .
+```
+
+### CLI commands
+
+After installation, you can run the command-line tools directly from the terminal.
+
+#### 1. FASTQ quality check
 
 ```bash
 ngs-variant-tool qc sample.fastq
+```
+
+This prints a summary with:
+- read count
+- average read length
+- GC content
+- base composition
+
+#### 2. VCF summary
+
+```bash
 ngs-variant-tool vcf-summary variants.vcf
+```
+
+This parses a VCF file and prints variant records with chromosome, position, REF/ALT, quality, and type.
+
+#### 3. Primer design for a mutation
+
+```bash
 ngs-variant-tool design-primer A T 24
 ```
+
+This generates a primer pair for a variant context using the reference and alternative allele and the target primer length.
+
+#### 4. Align a read to a reference sequence
+
+```bash
+ngs-variant-tool align ACGTACGTTT ACGTACGTTT
+```
+
+This performs a simple sequence alignment and reports:
+- alignment score
+- matches
+- mismatches
+- gaps
+- percent identity
+
+#### 5. Load a gene reference database
+
+```bash
+ngs-variant-tool load-db reference_database.json
+```
+
+This loads a JSON or TSV-style gene database and returns gene entries with chromosome, accession, and sequence metadata.
 
 ### Streamlit dashboard
 
 ```bash
 streamlit run app.py
+```
+
+The dashboard accepts:
+- FASTQ-like reads
+- FASTA reference inputs
+- VCF content
+- alignment and summary visual outputs
+
+### Example workflow
+
+```bash
+ngs-variant-tool qc sample.fastq
+ngs-variant-tool align ATGCGTACGA ATGCGTACGA
+ngs-variant-tool vcf-summary variants.vcf
+ngs-variant-tool design-primer A G 24
 ```
 
 ## License
